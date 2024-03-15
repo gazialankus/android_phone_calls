@@ -9,6 +9,13 @@ class MethodChannelAndroidPhoneCalls extends AndroidPhoneCallsPlatform {
   @visibleForTesting
   final methodChannel = const MethodChannel('android_phone_calls');
 
+  MethodChannelAndroidPhoneCalls() {
+    methodChannel.setMethodCallHandler((call) =>
+        Future.wait(listeners.values.map((listener) =>
+            listener(call)
+        )));
+  }
+
   @override
   Future<bool?> requestPermissions() {
     return methodChannel.invokeMethod<bool>('requestPermissions');
@@ -17,27 +24,6 @@ class MethodChannelAndroidPhoneCalls extends AndroidPhoneCallsPlatform {
   @override
   Future<bool?> checkPermissions() {
     return methodChannel.invokeMethod<bool>('checkPermissions');
-  }
-
-  @override
-  void addPhoneCallListener({
-    void Function(String?, String?)? onIncomingCall,
-    void Function()? onCallAnswered,
-    void Function()? onCallEnded,
-    void Function()? onMissedCall,
-  }) {
-    methodChannel.setMethodCallHandler((call) async {
-      if (call.method == "onIncomingCall") {
-        final arguments = call.arguments;
-        onIncomingCall?.call(arguments["phoneNumber"], arguments["callerName"]);
-      } else if (call.method == "onCallAnswered") {
-        onCallAnswered?.call();
-      } else if (call.method == "onCallEnded") {
-        onCallEnded?.call();
-      } else if (call.method == "onMissedCall") {
-        onMissedCall?.call();
-      }
-    });
   }
 
   @override

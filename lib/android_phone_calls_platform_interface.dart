@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'android_phone_calls_method_channel.dart';
@@ -31,14 +32,31 @@ abstract class AndroidPhoneCallsPlatform extends PlatformInterface {
     throw UnimplementedError('checkPermissions() has not been implemented.');
   }
 
-  void addPhoneCallListener({
+  final listeners = <Object, Future<dynamic> Function(MethodCall call)>{};
+
+  void setPhoneCallListenerFor({
     void Function(String?, String?)? onIncomingCall,
     void Function()? onCallAnswered,
     void Function()? onCallEnded,
     void Function()? onMissedCall,
+    required Object forObject,
   }) {
-    throw UnimplementedError(
-        'addPhoneCallListener() has not been implemented.');
+    listeners[forObject] = (MethodCall call) async {
+      if (call.method == "onIncomingCall") {
+        final arguments = call.arguments;
+        onIncomingCall?.call(arguments["phoneNumber"], arguments["callerName"]);
+      } else if (call.method == "onCallAnswered") {
+        onCallAnswered?.call();
+      } else if (call.method == "onCallEnded") {
+        onCallEnded?.call();
+      } else if (call.method == "onMissedCall") {
+        onMissedCall?.call();
+      }
+    };
+  }
+
+  void clearPhoneCallListenerFor({required Object forObject}) {
+    listeners.remove(forObject);
   }
 
   Future<String?> getDialerPackageName() {

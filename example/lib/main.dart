@@ -15,11 +15,15 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
 
   String callState = "No Call";
+  String callState2 = "No Call";
+
+  Object object2 = Object();
 
   @override
   void initState() {
     super.initState();
-    AndroidPhoneCalls.addPhoneCallListener(
+    AndroidPhoneCalls.setPhoneCallListenerFor(
+      forObject: this,
       onIncomingCall: (phone, name) {
         setState(() {
           callState = "phone: $phone, name: $name";
@@ -41,7 +45,37 @@ class _MyAppState extends State<MyApp> {
         });
       },
     );
+    AndroidPhoneCalls.setPhoneCallListenerFor(
+      forObject: object2,
+      onIncomingCall: (phone, name) {
+        setState(() {
+          callState2 = "phone: $phone, name: $name";
+        });
+      },
+      onCallAnswered: () {
+        setState(() {
+          callState2 = "Call answered";
+        });
+      },
+      onCallEnded: () {
+        setState(() {
+          callState2 = "Call ended";
+        });
+      },
+      onMissedCall: () {
+        setState(() {
+          callState2 = "Missed call";
+        });
+      },
+    );
     AndroidPhoneCalls.getDialerPackageName().then((value) => print('Dialer app: $value'));
+  }
+
+  @override
+  void dispose() {
+    AndroidPhoneCalls.clearPhoneCallListenerFor(forObject: object2);
+    AndroidPhoneCalls.clearPhoneCallListenerFor(forObject: this);
+    super.dispose();
   }
 
   @override
@@ -62,6 +96,8 @@ class _MyAppState extends State<MyApp> {
               ),
               const Spacer(),
               Text(callState),
+              const Spacer(),
+              Text(callState2),
               const Spacer(),
             ],
           ),
