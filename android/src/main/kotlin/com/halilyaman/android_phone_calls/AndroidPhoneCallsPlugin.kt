@@ -15,6 +15,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.plugin.common.StandardMethodCodec
 
 
 /** AndroidPhoneCallsPlugin */
@@ -31,7 +32,11 @@ class AndroidPhoneCallsPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   }
 
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "android_phone_calls")
+    val taskQueue =
+        flutterPluginBinding.binaryMessenger.makeBackgroundTaskQueue()
+
+    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "android_phone_calls",
+      StandardMethodCodec.INSTANCE, taskQueue)
     channel.setMethodCallHandler(this)
   }
 
