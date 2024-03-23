@@ -6,45 +6,47 @@ import android.content.Intent
 import android.provider.ContactsContract
 import android.telephony.TelephonyManager
 import android.util.Log
-import io.flutter.plugin.common.MethodChannel
 
 var isAnswered = false
 
 class PhoneCallHandler : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        Log.d(AndroidPhoneCallsPlugin.TAG, "onReceive")
         val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
         val phoneNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: return
+        val callerName = getCallerName(context, phoneNumber) ?: ""
         Log.d(AndroidPhoneCallsPlugin.TAG, "phoneNumber: $phoneNumber")
-        when (state) {
+        val msg = when (state) {
             TelephonyManager.EXTRA_STATE_RINGING -> {
                 // Incoming call
                 Log.d(AndroidPhoneCallsPlugin.TAG, "Incoming call...")
-                val callerName = getCallerName(context, phoneNumber)
-                AndroidPhoneCallsPlugin.channel.invokeMethod(
-                    "onIncomingCall",
-                    mapOf("phoneNumber" to phoneNumber, "callerName" to callerName)
-                )
+                hashMapOf("eventType" to "incomingCall", "phoneNumber" to phoneNumber, "callerName" to callerName)
             }
             TelephonyManager.EXTRA_STATE_OFFHOOK -> {
                 // Call answered
                 Log.d(AndroidPhoneCallsPlugin.TAG, "Answered call.")
                 isAnswered = true
-                AndroidPhoneCallsPlugin.channel.invokeMethod("onCallAnswered", null)
+                hashMapOf("eventType" to "answeredCall", "phoneNumber" to phoneNumber, "callerName" to callerName)
             }
             TelephonyManager.EXTRA_STATE_IDLE -> {
                 if (isAnswered) {
                     // Call ended
                     Log.d(AndroidPhoneCallsPlugin.TAG, "Ended call.")
                     isAnswered = false
-                    AndroidPhoneCallsPlugin.channel.invokeMethod("onCallEnded", null)
+                    hashMapOf("eventType" to "endedCall", "phoneNumber" to phoneNumber, "callerName" to callerName)
                 } else {
                     // Call missed or rejected
                     Log.d(AndroidPhoneCallsPlugin.TAG, "Missed/Rejected call.")
-                    AndroidPhoneCallsPlugin.channel.invokeMethod("onMissedCall", null)
+                    hashMapOf("eventType" to "missedCall", "phoneNumber" to phoneNumber, "callerName" to callerName)
                 }
             }
+            else -> hashMapOf("eventType" to "unknown", "phoneNumber" to phoneNumber, "callerName" to callerName)
         }
+
+        val intent = Intent(AndroidPhoneCallsPlugin.LOCAL_INTENT)
+        intent.putExtra(AndroidPhoneCallsPlugin.LOCAL_MESSAGE, msg)
+        context.sendBroadcast(intent)
     }
 
     private fun getCallerName(context: Context, phoneNumber: String?): String? {

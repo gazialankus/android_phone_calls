@@ -1,4 +1,6 @@
 
+import 'package:android_phone_calls/phone_call_event.dart';
+
 import 'android_phone_calls_platform_interface.dart';
 
 class AndroidPhoneCalls {
@@ -12,30 +14,11 @@ class AndroidPhoneCalls {
     return await AndroidPhoneCallsPlatform.instance.checkPermissions();
   }
 
-  static void setPhoneCallListenerFor({
-    void Function(String? phoneNumber, String? callerName)? onIncomingCall,
-    void Function()? onCallAnswered,
-    void Function()? onCallEnded,
-    void Function()? onMissedCall,
-    required Object forObject,
-  }) {
-    AndroidPhoneCallsPlatform.instance.setPhoneCallListenerFor(
-      onIncomingCall: onIncomingCall,
-      onCallAnswered: onCallAnswered,
-      onCallEnded: onCallEnded,
-      onMissedCall: onMissedCall,
-      forObject: forObject,
-    );
-  }
-
-  static void clearPhoneCallListenerFor({required Object forObject}) {
-    AndroidPhoneCallsPlatform.instance.clearPhoneCallListenerFor(
-      forObject: forObject,
-    );
-  }
-
-
   static Future<String?> getDialerPackageName() {
     return AndroidPhoneCallsPlatform.instance.getDialerPackageName();
+  }
+
+  static Stream<PhoneCallEvent> get phoneCallStream {
+    return AndroidPhoneCallsPlatform.instance.phoneCallStream;
   }
 }

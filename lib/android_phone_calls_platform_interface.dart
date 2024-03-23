@@ -1,3 +1,4 @@
+import 'package:android_phone_calls/phone_call_event.dart';
 import 'package:flutter/services.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -32,34 +33,12 @@ abstract class AndroidPhoneCallsPlatform extends PlatformInterface {
     throw UnimplementedError('checkPermissions() has not been implemented.');
   }
 
-  final listeners = <Object, Future<dynamic> Function(MethodCall call)>{};
-
-  void setPhoneCallListenerFor({
-    void Function(String?, String?)? onIncomingCall,
-    void Function()? onCallAnswered,
-    void Function()? onCallEnded,
-    void Function()? onMissedCall,
-    required Object forObject,
-  }) {
-    listeners[forObject] = (MethodCall call) async {
-      if (call.method == "onIncomingCall") {
-        final arguments = call.arguments;
-        onIncomingCall?.call(arguments["phoneNumber"], arguments["callerName"]);
-      } else if (call.method == "onCallAnswered") {
-        onCallAnswered?.call();
-      } else if (call.method == "onCallEnded") {
-        onCallEnded?.call();
-      } else if (call.method == "onMissedCall") {
-        onMissedCall?.call();
-      }
-    };
-  }
-
-  void clearPhoneCallListenerFor({required Object forObject}) {
-    listeners.remove(forObject);
-  }
-
   Future<String?> getDialerPackageName() {
     throw UnimplementedError('getDialerAppPackages() has not been implemented.');
   }
+
+  Stream<PhoneCallEvent> get phoneCallStream {
+    throw UnimplementedError('phoneCallStream has not been implemented.');
+  }
+
 }
