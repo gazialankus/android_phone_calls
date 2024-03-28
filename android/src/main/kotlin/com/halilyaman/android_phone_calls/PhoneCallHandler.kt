@@ -11,6 +11,7 @@ import android.telephony.TelephonyManager
 import android.util.Log
 
 
+var isRinging = false
 var isAnswered = false
 
 class PhoneCallHandler : BroadcastReceiver() {
@@ -26,13 +27,30 @@ class PhoneCallHandler : BroadcastReceiver() {
             TelephonyManager.EXTRA_STATE_RINGING -> {
                 // Incoming call
                 Log.d(AndroidPhoneCallsPlugin.TAG, "Incoming call...")
+                isRinging = true;
                 hashMapOf("eventType" to "incomingCall", "phoneNumber" to phoneNumber, "callerName" to callerName)
             }
             TelephonyManager.EXTRA_STATE_OFFHOOK -> {
                 // Call answered
-                Log.d(AndroidPhoneCallsPlugin.TAG, "Answered call.")
-                isAnswered = true
-                hashMapOf("eventType" to "answeredCall", "phoneNumber" to phoneNumber, "callerName" to callerName)
+                if (isRinging) {
+                    Log.d(AndroidPhoneCallsPlugin.TAG, "Answered call.")
+                    isAnswered = true
+                    isRinging = false
+                    hashMapOf("eventType" to "answeredCall", "phoneNumber" to phoneNumber, "callerName" to callerName)
+                } else if (!isAnswered) {
+                    Log.d(AndroidPhoneCallsPlugin.TAG, "Placing call.")
+                    hashMapOf(
+                        "eventType" to "placingCall",
+                        "phoneNumber" to phoneNumber,
+                        "callerName" to callerName
+                    )
+                } else {
+                    hashMapOf(
+                        "eventType" to "callOnHold",
+                        "phoneNumber" to phoneNumber,
+                        "callerName" to callerName
+                    )
+                }
             }
             TelephonyManager.EXTRA_STATE_IDLE -> {
                 if (isAnswered) {
@@ -43,6 +61,7 @@ class PhoneCallHandler : BroadcastReceiver() {
                 } else {
                     // Call missed or rejected
                     Log.d(AndroidPhoneCallsPlugin.TAG, "Missed/Rejected call.")
+                    isRinging = false
                     hashMapOf("eventType" to "missedCall", "phoneNumber" to phoneNumber, "callerName" to callerName)
                 }
             }
