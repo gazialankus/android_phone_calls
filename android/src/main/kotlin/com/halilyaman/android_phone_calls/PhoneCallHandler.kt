@@ -15,7 +15,13 @@ class PhoneCallHandler : BroadcastReceiver() {
         Log.d(AndroidPhoneCallsPlugin.TAG, "onReceive")
         val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
         val phoneNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: return
-        val callerName = getCallerName(context, phoneNumber) ?: ""
+        Log.d(AndroidPhoneCallsPlugin.TAG, "will get caller name")
+        var callerName = ""
+        var skipDigits = 0;
+        while (callerName == "" && skipDigits < 5) {
+            callerName = getCallerName(context, phoneNumber, skipDigits) ?: ""
+            skipDigits += 1
+        }
         Log.d(AndroidPhoneCallsPlugin.TAG, "phoneNumber: $phoneNumber")
         val msg = when (state) {
             TelephonyManager.EXTRA_STATE_RINGING -> {
@@ -49,7 +55,8 @@ class PhoneCallHandler : BroadcastReceiver() {
         context.sendBroadcast(intent)
     }
 
-    private fun getCallerName(context: Context, phoneNumber: String?): String? {
+    private fun getCallerName(context: Context, phoneNumber: String?, skipDigits: Int): String? {
+        Log.d(AndroidPhoneCallsPlugin.TAG, "Caller: will try with $skipDigits ${phoneNumber?.substring(skipDigits)}")
         try {
             var callerName: String? = null
             val uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI
@@ -57,9 +64,26 @@ class PhoneCallHandler : BroadcastReceiver() {
                 ContactsContract.PhoneLookup.DISPLAY_NAME,
                 ContactsContract.CommonDataKinds.Phone.NUMBER
             )
-            val selection = "${ContactsContract.CommonDataKinds.Phone.NUMBER} = ?"
-            val selectionArgs = arrayOf(phoneNumber)
-            val people = context.contentResolver.query(uri, projection, selection, selectionArgs, null)
+            val selection: String
+            val selectionArgs: Array<String>
+            if (phoneNumber != null) {
+                selection = "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?"
+                selectionArgs = arrayOf(phoneNumber.substring(skipDigits))
+            } else {
+                selection = "${ContactsContract.CommonDataKinds.Phone.NUMBER} = ?"
+                selectionArgs = arrayOf()
+            }
+            val people = context.contentResolver.query(
+                uri,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+            )
+            if (people == null) {
+                Log.d(AndroidPhoneCallsPlugin.TAG, "Caller: people was null")
+            }
+            Log.d(AndroidPhoneCallsPlugin.TAG, "Caller: people count: ${people?.count}")
             if (people != null && people.moveToFirst()) {
                 val indexName = people.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME)
                 if (indexName > -1) {
@@ -69,6 +93,8 @@ class PhoneCallHandler : BroadcastReceiver() {
             }
             return callerName
         } catch(e: Exception) {
+            Log.d(AndroidPhoneCallsPlugin.TAG, "Caller: exception!")
+            Log.d(AndroidPhoneCallsPlugin.TAG, e.toString());
             return null
         }
     }
