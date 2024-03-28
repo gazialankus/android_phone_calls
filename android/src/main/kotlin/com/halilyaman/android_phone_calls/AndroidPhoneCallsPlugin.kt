@@ -45,13 +45,15 @@ class AndroidPhoneCallsPlugin: FlutterPlugin, MethodCallHandler, ActivityAware,
     Log.d(TAG, "onAttachedToEngine")
     val taskQueue =
         flutterPluginBinding.binaryMessenger.makeBackgroundTaskQueue()
+    Log.d(TAG, "All channels use taskqueue")
 
     context = flutterPluginBinding.applicationContext
 
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, CHANNEL_NAME,
       StandardMethodCodec.INSTANCE, taskQueue)
     channel.setMethodCallHandler(this)
-    eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, EVENT_CHANNEL_NAME)
+    eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, EVENT_CHANNEL_NAME,
+      StandardMethodCodec.INSTANCE, taskQueue)
     eventChannel.setStreamHandler(this)
   }
 
